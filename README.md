@@ -256,3 +256,6 @@ public partial class Program
 Resultados obtidos:
 
 ![localhost](/Assets/resultados_novas_metricas.png)
+
+
+   

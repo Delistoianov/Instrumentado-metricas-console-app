@@ -16,6 +16,7 @@ app.MapGet("/", (HatCoMetrics hatCoMetrics) =>
     return "Metrics Updated";
 });
 
+Console.WriteLine("Projeto do João Executando");
 
 app.Run();
 
@@ -23,9 +24,15 @@ public partial class Program
 {
     static Meter s_meter = new Meter("HatCo.Store");
     static Counter<int> s_hatsSold = s_meter.CreateCounter<int>("hatco.store.hats_sold");
+    static ObservableCounter<int> s_coatsSold = s_meter.CreateObservableCounter<int>("hatco.store.coats_sold", () => s_rand.Next(1, 10));
+    static Random s_rand = new Random();
 
     public static void Main(string[] args)
     {
+        // Referenciar os contadores estáticos para garantir sua inicialização
+        Console.WriteLine(s_hatsSold);
+        Console.WriteLine(s_coatsSold);
+
         Console.WriteLine("Projeto do João Executando");
         while (!Console.KeyAvailable)
         {
