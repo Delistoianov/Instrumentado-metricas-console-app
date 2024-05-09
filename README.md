@@ -1,4 +1,4 @@
-# Instrumentado-metricas-console-app
+# Instrumentando-metricas-console-app
 
 ## Passos para a execução:
 
@@ -90,7 +90,7 @@
       ![metrica_01](/Assets/metricas_geradas.png)
 
 
-### Medidor por meio da injeção de dependência:
+### Coletando métricas com integração ao servidor:
 
 Foi adicionado injeção de dependencia para a execução em singleton no container, o código modificado do Program está abaixo:
 
@@ -145,3 +145,114 @@ public partial class Program
 ![localhost](/Assets/contador_executando_com_local.png)
 
 A cada requisição (refresh na pagina - f5), é adicionado 4 itens.
+
+#### Adição de novas métricas:
+
+* Metricas adicionadas:
+
+1. Tempo de processamento do pedido
+2. Número de casacos vendidos
+3. Número de pedidos pendentes
+
+
+Para adicionar novas métricas no código foi necessário modificar a classe HatCoMetrics, o código modificado está abaixo:
+
+```
+using System.Diagnostics.Metrics;
+
+namespace ConsoleApp_metrics
+{
+    public class HatCoMetrics
+    {
+        private readonly Counter<int> _hatsSold;
+        private readonly Histogram<double> _orderProcessingTime;
+        private static int _coatsSold;
+        private static int _ordersPending;
+        private static Random _rand = new Random();
+
+        public HatCoMetrics(IMeterFactory meterFactory)
+        {
+            var meter = meterFactory.Create("HatCo.Store");
+            _hatsSold = meter.CreateCounter<int>("hatco.store.hats_sold");
+            _orderProcessingTime = meter.CreateHistogram<double>("hatco.store.order_processing_time");
+            meter.CreateObservableCounter<int>("hatco.store.coats_sold", () => _coatsSold);
+            meter.CreateObservableGauge<int>("hatco.store.orders_pending", () => _ordersPending);
+        }
+
+        public void HatsSold(int quantity)
+        {
+            _hatsSold.Add(quantity);
+        }
+
+        public void RecordOrderProcessingTime(double time)
+        {
+            _orderProcessingTime.Record(time);
+        }
+
+        public void SimulateCoatSale()
+        {
+            _coatsSold += 3;
+        }
+
+        public void SimulateOrderQueue()
+        {
+            _ordersPending = _rand.Next(0, 20);
+        }
+
+        public void SimulateMetrics()
+        {
+            HatsSold(4);
+            SimulateCoatSale();
+            SimulateOrderQueue();
+            RecordOrderProcessingTime(_rand.Next(5, 15) / 1000.0); // Random time between 0.005 and 0.015 seconds
+        }
+    }
+}
+
+```
+
+Também foram necessárias mudanças no arquivo Program:
+
+```
+using ConsoleApp_metrics;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using System.Diagnostics.Metrics;
+using System.Threading;
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton<HatCoMetrics>();
+
+var app = builder.Build();
+
+app.MapGet("/", (HatCoMetrics hatCoMetrics) =>
+{
+    hatCoMetrics.SimulateMetrics();
+    return "Metrics Updated";
+});
+
+
+app.Run();
+
+public partial class Program
+{
+    static Meter s_meter = new Meter("HatCo.Store");
+    static Counter<int> s_hatsSold = s_meter.CreateCounter<int>("hatco.store.hats_sold");
+
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Projeto do João Executando");
+        while (!Console.KeyAvailable)
+        {
+            Thread.Sleep(1000);
+            s_hatsSold.Add(4);
+        }
+    }
+}
+
+```
+
+Resultados obtidos:
+
+![localhost](/Assets/resultados_novas_metricas.png)

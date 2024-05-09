@@ -12,9 +12,10 @@ var app = builder.Build();
 
 app.MapGet("/", (HatCoMetrics hatCoMetrics) =>
 {
-    hatCoMetrics.HatsSold(4);
-    return "Metric Recorded";
+    hatCoMetrics.SimulateMetrics();
+    return "Metrics Updated";
 });
+
 
 app.Run();
 
