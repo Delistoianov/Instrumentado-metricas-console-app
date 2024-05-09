@@ -9,7 +9,7 @@ class Program
 
     static void Main(string[] args)
     {
-        Console.WriteLine("executando");
+        Console.WriteLine("Projeto do João Executando");
         while (!Console.KeyAvailable)
         {
             Thread.Sleep(1000);
