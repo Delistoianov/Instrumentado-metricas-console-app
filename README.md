@@ -88,3 +88,60 @@
     * Metricas geradas:
   
       ![metrica_01](/Assets/metricas_geradas.png)
+
+
+### Medidor por meio da injeção de dependência:
+
+Foi adicionado injeção de dependencia para a execução em singleton no container, o código modificado do Program está abaixo:
+
+
+```
+
+using ConsoleApp_metrics;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using System.Diagnostics.Metrics;
+using System.Threading;
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton<HatCoMetrics>();
+
+var app = builder.Build();
+
+app.MapGet("/", (HatCoMetrics hatCoMetrics) =>
+{
+    hatCoMetrics.HatsSold(4);
+    return "Metric Recorded";
+});
+
+app.Run();
+
+public partial class Program
+{
+    static Meter s_meter = new Meter("HatCo.Store");
+    static Counter<int> s_hatsSold = s_meter.CreateCounter<int>("hatco.store.hats_sold");
+
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Projeto do João Executando");
+        while (!Console.KeyAvailable)
+        {
+            Thread.Sleep(1000);
+            s_hatsSold.Add(4);
+        }
+    }
+}
+
+
+```
+
+ A inclusão de builder.Services.AddSingleton<HatCoMetrics>(); no método WebApplication.CreateBuilder(args) serve para registrar a classe HatCoMetrics como um serviço singleton no contêiner de injeção de dependência. Isso significa que uma única instância de HatCoMetrics será criada e reutilizada durante toda a vida útil da aplicação.
+
+ Com essas mudanças no arquivo Program, ao entrar na porta 5000 localmente pelo brouser por exemplo, é feita uma requisição HTTP get, que incrementa 4 itens na lista de chapeus.
+
+![localhost](/Assets/localhost.png)
+
+![localhost](/Assets/contador_executando_com_local.png)
+
+A cada requisição (refresh na pagina - f5), é adicionado 4 itens.
