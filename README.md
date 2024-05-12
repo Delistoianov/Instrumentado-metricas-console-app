@@ -258,4 +258,8 @@ Resultados obtidos:
 ![localhost](/Assets/resultados_novas_metricas.png)
 
 
-   
+## Testes Unitários:
+
+1. Primeiramente foi criado um projeto do tipo xUnit para testar a aplicação:
+
+![xunit](/Assets/xUnit_test.png)
